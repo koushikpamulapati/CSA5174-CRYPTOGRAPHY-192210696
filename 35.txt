@@ -1,0 +1,54 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
+#define ALPHABET_SIZE 26
+int generate_random_key() {
+    return rand() % ALPHABET_SIZE;
+}
+void encrypt(char *plaintext, char *ciphertext, int *key, int length) {
+    for (int i = 0; i < length; i++) {
+        if (plaintext[i] >= 'A' && plaintext[i] <= 'Z') {
+            ciphertext[i] = ((plaintext[i] - 'A' + key[i]) % ALPHABET_SIZE) + 'A';
+        } else if (plaintext[i] >= 'a' && plaintext[i] <= 'z') {
+            ciphertext[i] = ((plaintext[i] - 'a' + key[i]) % ALPHABET_SIZE) + 'a';
+        } else {
+            ciphertext[i] = plaintext[i]; 
+        }
+    }
+}
+void decrypt(char *ciphertext, char *plaintext, int *key, int length) {
+    for (int i = 0; i < length; i++) {
+        if (ciphertext[i] >= 'A' && ciphertext[i] <= 'Z') {
+            plaintext[i] = ((ciphertext[i] - 'A' - key[i] + ALPHABET_SIZE) % ALPHABET_SIZE) + 'A';
+        } else if (ciphertext[i] >= 'a' && ciphertext[i] <= 'z') {
+            plaintext[i] = ((ciphertext[i] - 'a' - key[i] + ALPHABET_SIZE) % ALPHABET_SIZE) + 'a';
+        } else {
+            plaintext[i] = ciphertext[i]; 
+        }
+    }
+}
+
+int main() {
+    srand(time(NULL));  // Seed for random number generation
+
+    // Example plaintext
+    char plaintext[] = "RANJI!";
+    int length = strlen(plaintext);
+    char ciphertext[length + 1]; 
+    char decrypted[length + 1];  
+    int key[length];
+    for (int i = 0; i < length; i++) {
+        key[i] = generate_random_key();
+    }
+    encrypt(plaintext, ciphertext, key, length);
+    ciphertext[length] = '\0'; 
+    printf("Original plaintext: %s\n", plaintext);
+    printf("Encrypted ciphertext: %s\n", ciphertext);
+    decrypt(ciphertext, decrypted, key, length);
+    decrypted[length] = '\0'; 
+
+    printf("Decrypted plaintext: %s\n", decrypted);
+
+    return 0;
+}

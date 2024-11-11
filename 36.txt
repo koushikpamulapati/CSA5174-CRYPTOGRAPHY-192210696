@@ -1,0 +1,74 @@
+#include <stdio.h>
+#include <string.h>
+#define ALPHABET_SIZE 26
+int mod_inverse(int a, int m) {
+    for (int x = 1; x < m; x++) {
+        if ((a * x) % m == 1) {
+            return x;
+        }
+    }
+    return -1; 
+}
+void encrypt(char *plaintext, char *ciphertext, int a, int b) {
+    int i;
+    for (i = 0; i < strlen(plaintext); i++) {
+        if (plaintext[i] >= 'A' && plaintext[i] <= 'Z') {
+            ciphertext[i] = (a * (plaintext[i] - 'A') + b) % ALPHABET_SIZE + 'A';
+        } else if (plaintext[i] >= 'a' && plaintext[i] <= 'z') {
+            ciphertext[i] = (a * (plaintext[i] - 'a') + b) % ALPHABET_SIZE + 'a';
+        } else {
+            ciphertext[i] = plaintext[i];  
+        }
+    }
+    ciphertext[i] = '\0';  
+}
+void decrypt(char *ciphertext, char *plaintext, int a, int b) {
+    int a_inv = mod_inverse(a, ALPHABET_SIZE);
+    if (a_inv == -1) {
+        printf("Error: No modular inverse for 'a' exists. Choose a different 'a'.\n");
+        return;
+    }
+
+    int i;
+    for (i = 0; i < strlen(ciphertext); i++) {
+        if (ciphertext[i] >= 'A' && ciphertext[i] <= 'Z') {
+            plaintext[i] = (a_inv * (ciphertext[i] - 'A' - b + ALPHABET_SIZE) % ALPHABET_SIZE) + 'A';
+        } else if (ciphertext[i] >= 'a' && ciphertext[i] <= 'z') {
+            plaintext[i] = (a_inv * (ciphertext[i] - 'a' - b + ALPHABET_SIZE) % ALPHABET_SIZE) + 'a';
+        } else {
+            plaintext[i] = ciphertext[i];  // Non-alphabetic characters remain unchanged
+        }
+    }
+    plaintext[i] = '\0';  // Null-terminate the plaintext
+}
+
+int main() {
+    char plaintext[100], ciphertext[100], decrypted[100];
+    int a, b;
+
+    // Get user input for the plaintext and key values
+    printf("Enter the plaintext: ");
+    fgets(plaintext, sizeof(plaintext), stdin);
+    plaintext[strcspn(plaintext, "\n")] = '\0'; // Remove newline character if present
+
+    printf("Enter the value of a (must be coprime with 26): ");
+    scanf("%d", &a);
+    printf("Enter the value of b: ");
+    scanf("%d", &b);
+
+    // Check if 'a' is coprime with 26 (i.e., gcd(a, 26) should be 1)
+    if (mod_inverse(a, ALPHABET_SIZE) == -1) {
+        printf("Error: 'a' must be coprime with 26. Please choose a different 'a'.\n");
+        return 1;
+    }
+
+    // Encrypt the plaintext
+    encrypt(plaintext, ciphertext, a, b);
+    printf("Encrypted ciphertext: %s\n", ciphertext);
+
+    // Decrypt the ciphertext
+    decrypt(ciphertext, decrypted, a, b);
+    printf("Decrypted plaintext: %s\n", decrypted);
+
+    return 0;
+}

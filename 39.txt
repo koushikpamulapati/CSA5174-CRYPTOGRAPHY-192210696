@@ -1,0 +1,81 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#define ALPHABET_SIZE 26
+void calculate_frequency(const char *text, int *freq) {
+    for (int i = 0; text[i] != '\0'; i++) {
+        if (isalpha(text[i])) {
+            char c = tolower(text[i]);
+            freq[c - 'a']++;
+        }
+    }
+}
+void decrypt_with_shift(const char *ciphertext, int shift, char *plaintext) {
+    for (int i = 0; ciphertext[i] != '\0'; i++) {
+        if (isalpha(ciphertext[i])) {
+            char c = tolower(ciphertext[i]);
+            c = (c - 'a' - shift + ALPHABET_SIZE) % ALPHABET_SIZE + 'a';  
+            plaintext[i] = c;
+        } else {
+            plaintext[i] = ciphertext[i];  
+        }
+    }
+    plaintext[strlen(ciphertext)] = '\0';  
+}
+int rank_plaintext(const char *plaintext) {
+    int freq[ALPHABET_SIZE] = {0};
+    calculate_frequency(plaintext, freq);
+    return freq['e' - 'a'];
+}
+void letter_frequency_attack(const char *ciphertext, int top_n) {
+    int freq[ALPHABET_SIZE] = {0};
+    calculate_frequency(ciphertext, freq);
+
+    // Assuming 'e' is the most common letter in the plaintext
+    int max_freq = freq['e' - 'a'];
+
+    // We'll now try all possible shifts (0 to 25) and decrypt the ciphertext
+    // We'll store the results in an array and rank them based on letter frequency
+    char decrypted[1000];  // Buffer to store decrypted text
+    int rankings[26];      // Array to store ranking based on 'e' frequency
+    int shift_rankings[26]; // Store corresponding shifts to rank plaintexts
+
+    for (int shift = 0; shift < ALPHABET_SIZE; shift++) {
+        decrypt_with_shift(ciphertext, shift, decrypted);
+        rankings[shift] = rank_plaintext(decrypted);  // Rank based on frequency of 'e'
+        shift_rankings[shift] = shift;  // Store corresponding shift
+    }
+
+    // Sort the shifts based on rankings (highest first)
+    for (int i = 0; i < ALPHABET_SIZE - 1; i++) {
+        for (int j = i + 1; j < ALPHABET_SIZE; j++) {
+            if (rankings[i] < rankings[j]) {
+                // Swap rankings
+                int temp = rankings[i];
+                rankings[i] = rankings[j];
+                rankings[j] = temp;
+
+                // Swap corresponding shifts
+                temp = shift_rankings[i];
+                shift_rankings[i] = shift_rankings[j];
+                shift_rankings[j] = temp;
+            }
+        }
+    }
+
+    // Display the top N possible plaintexts
+    printf("Top %d possible plaintexts based on frequency analysis:\n", top_n);
+    for (int i = 0; i < top_n; i++) {
+        decrypt_with_shift(ciphertext, shift_rankings[i], decrypted);
+        printf("%d. %s\n", i + 1, decrypted);
+    }
+}
+
+int main() {
+    char ciphertext[] = "Xlmw mw xlmw mw xlmw mw";
+    int top_n = 3;  // Top 3 most likely plaintexts to display
+
+    letter_frequency_attack(ciphertext, top_n);
+
+    return 0;
+}

@@ -1,0 +1,69 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+
+#define DES_BLOCK_SIZE 8
+#define DES_KEY_SIZE 8
+
+// Simplified S-boxes for DES (Only a small portion for demonstration)
+static const uint8_t S1[64] = {
+    0xF, 0xA, 0x7, 0xC, 0x0, 0xD, 0x3, 0xE,
+    0x6, 0x1, 0xB, 0x4, 0x9, 0x5, 0x2, 0x8,
+    0x3, 0x6, 0x0, 0xB, 0x1, 0x4, 0xF, 0xA,
+    0xE, 0x2, 0x8, 0x7, 0xD, 0x9, 0x5, 0xC,
+    0x4, 0x1, 0x8, 0x6, 0xB, 0xA, 0x2, 0xC,
+    0x3, 0xF, 0x0, 0xD, 0x9, 0xE, 0x7, 0x5,
+    0xC, 0x2, 0xA, 0x9, 0x1, 0x3, 0xF, 0x8,
+    0xD, 0xE, 0x5, 0x7, 0xB, 0x0, 0x4, 0x6
+};
+
+// Function to rotate a 64-bit block left by shift positions
+uint64_t rotate_left(uint64_t block, int shift) {
+    return (block << shift) | (block >> (64 - shift));
+}
+
+// Function to perform DES encryption (simplified version)
+void des_encrypt(uint64_t *data, uint64_t key) {
+    // In a full DES algorithm, more steps are needed. Here we just rotate the data
+    // and apply the S-box for a simplified demonstration.
+
+    // Left rotation of the key (just for demonstration purposes)
+    key = rotate_left(key, 3);
+
+    // Simplified substitution using the S-box
+    uint8_t left = (key >> 56) & 0xFF;
+    uint8_t right = (key >> 48) & 0xFF;
+    left = S1[left];
+    right = S1[right];
+    *data = (*data & 0x00FFFFFFFFFFFFFF) | ((uint64_t)left << 56) | ((uint64_t)right << 48);
+}
+
+// Function to perform DES decryption (simplified version)
+void des_decrypt(uint64_t *data, uint64_t key) {
+    // Decryption is just reversing the encryption operation
+    key = rotate_left(key, -3);  // Rotate in the opposite direction
+
+    uint8_t left = (key >> 56) & 0xFF;
+    uint8_t right = (key >> 48) & 0xFF;
+    left = S1[left];
+    right = S1[right];
+    *data = (*data & 0x00FFFFFFFFFFFFFF) | ((uint64_t)left << 56) | ((uint64_t)right << 48);
+}
+
+int main() {
+    uint64_t key = 0x133457799BBCDFF1;  // Example 64-bit DES key
+    uint64_t data = 0x0123456789ABCDEF;  // Example 64-bit data (plaintext)
+
+    printf("Original Data: 0x%016llx\n", data);
+    printf("Original Key: 0x%016llx\n", key);
+
+    // Encrypt the data
+    des_encrypt(&data, key);
+    printf("Encrypted Data: 0x%016llx\n", data);
+
+    // Decrypt the data
+    des_decrypt(&data, key);
+    printf("Decrypted Data: 0x%016llx\n", data);
+
+    return 0;
+}

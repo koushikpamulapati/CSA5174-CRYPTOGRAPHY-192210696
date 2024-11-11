@@ -1,0 +1,135 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define N 2 
+#define MOD 26 
+
+void print_matrix(int matrix[N][N]) {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            printf("%d ", matrix[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+void multiply_matrix(int result[N][N], int mat1[N][N], int mat2[N][N]) {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            result[i][j] = 0;
+            for (int k = 0; k < N; k++) {
+                result[i][j] = (result[i][j] + mat1[i][k] * mat2[k][j]) % MOD;
+            }
+        }
+    }
+}
+
+void encrypt_message(char* message, int key_matrix[N][N], char* ciphertext) {
+    int msg_vector[N];
+    for (int i = 0; i < strlen(message); i++) {
+        if (message[i] >= 'A' && message[i] <= 'Z') {
+            msg_vector[0] = message[i] - 'A';
+            msg_vector[1] = message[++i] - 'A';  // assuming message is even length
+            int encrypted_vector[N];
+            for (int j = 0; j < N; j++) {
+                encrypted_vector[j] = 0;
+                for (int k = 0; k < N; k++) {
+                    encrypted_vector[j] = (encrypted_vector[j] + key_matrix[j][k] * msg_vector[k]) % MOD;
+                }
+            }
+            ciphertext[i] = encrypted_vector[0] + 'A';
+            ciphertext[i + 1] = encrypted_vector[1] + 'A';
+        }
+    }
+}
+
+void inverse_matrix(int matrix[N][N], int result[N][N]) {
+    int determinant = matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
+    determinant = (determinant % MOD + MOD) % MOD; // Ensure positive modulus
+    int inv_determinant = 0;
+    // Find modular inverse of the determinant
+    for (int i = 0; i < MOD; i++) {
+        if ((determinant * i) % MOD == 1) {
+            inv_determinant = i;
+            break;
+        }
+    }
+
+    result[0][0] = matrix[1][1] * inv_determinant % MOD;
+    result[0][1] = -matrix[0][1] * inv_determinant % MOD;
+    result[1][0] = -matrix[1][0] * inv_determinant % MOD;
+    result[1][1] = matrix[0][0] * inv_determinant % MOD;
+
+    // Adjust result to positive values
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            if (result[i][j] < 0) {
+                result[i][j] += MOD;
+            }
+        }
+    }
+}
+
+void decrypt_message(char* ciphertext, int key_matrix[N][N], char* plaintext) {
+    int key_inv[N][N];
+    inverse_matrix(key_matrix, key_inv);
+    int cipher_vector[N];
+    for (int i = 0; i < strlen(ciphertext); i++) {
+        cipher_vector[0] = ciphertext[i] - 'A';
+        cipher_vector[1] = ciphertext[++i] - 'A';  // assuming message is even length
+        int decrypted_vector[N];
+        for (int j = 0; j < N; j++) {
+            decrypted_vector[j] = 0;
+            for (int k = 0; k < N; k++) {
+                decrypted_vector[j] = (decrypted_vector[j] + key_inv[j][k] * cipher_vector[k]) % MOD;
+            }
+        }
+        plaintext[i] = decrypted_vector[0] + 'A';
+        plaintext[i + 1] = decrypted_vector[1] + 'A';
+    }
+}
+
+void attack_hill_cipher(int known_plaintext[N], int known_ciphertext[N], int found_key[N][N]) {
+    // Implement the attack by solving the system of linear equations
+    // Assume a 2x2 matrix, we have two plaintext-ciphertext pairs
+    // For the 2x2 Hill Cipher, this is sufficient to deduce the key matrix.
+
+    int plaintext_matrix[N][N] = {{known_plaintext[0], known_plaintext[1]}, {known_plaintext[2], known_plaintext[3]}};
+    int ciphertext_matrix[N][N] = {{known_ciphertext[0], known_ciphertext[1]}, {known_ciphertext[2], known_ciphertext[3]}};
+    int inverse_plaintext_matrix[N][N];
+    
+    inverse_matrix(plaintext_matrix, inverse_plaintext_matrix);
+    
+    // Multiply inverse_plaintext_matrix with ciphertext_matrix to find the key matrix
+    multiply_matrix(found_key, inverse_plaintext_matrix, ciphertext_matrix);
+}
+
+int main() {
+    // Example key matrix for the Hill Cipher (2x2 matrix)
+    int key_matrix[N][N] = {{6, 24}, {1, 19}};  // This is just an example
+
+    // Plaintext message (must be in upper case)
+    char message[] = "HELLO";
+    char ciphertext[100];
+
+    // Encrypt the message
+    encrypt_message(message, key_matrix, ciphertext);
+    printf("Encrypted Message: %s\n", ciphertext);
+
+    // Decrypt the message
+    char decrypted[100];
+    decrypt_message(ciphertext, key_matrix, decrypted);
+    printf("Decrypted Message: %s\n", decrypted);
+
+    // Known plaintext-ciphertext pairs for the attack (example)
+    int known_plaintext[] = {7, 4, 11, 11}; // "HE" -> 7 4
+    int known_ciphertext[] = {14, 24, 22, 19}; // "LO" -> 14 24
+
+    int found_key[N][N];
+    attack_hill_cipher(known_plaintext, known_ciphertext, found_key);
+
+    printf("Recovered Key Matrix:\n");
+    print_matrix(found_key);
+
+    return 0;
+}

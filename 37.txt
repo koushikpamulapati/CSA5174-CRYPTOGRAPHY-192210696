@@ -1,0 +1,86 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define ALPHABET_SIZE 26
+#define MAX_TEXT_LENGTH 1000
+#define TOP_N 10
+
+// English letter frequencies (based on rough frequency of letters in English)
+float english_frequencies[ALPHABET_SIZE] = {8.167, 1.492, 2.782, 4.253, 12.702, 2.228, 2.015, 6.094, 6.966, 0.153, 0.772, 4.025, 2.406, 6.749, 7.507, 1.929, 0.095, 5.987, 6.327, 9.056, 2.758, 0.978, 2.360, 0.150, 1.974, 0.074};
+
+// Function to calculate letter frequency in ciphertext
+void calculate_frequency(const char *ciphertext, int *frequency) {
+    for (int i = 0; ciphertext[i] != '\0'; i++) {
+        char c = toupper(ciphertext[i]);
+        if (c >= 'A' && c <= 'Z') {
+            frequency[c - 'A']++;
+        }
+    }
+}
+
+// Function to print the top N guesses for plaintext
+void print_top_n_guesses(const char *ciphertext, int *frequency, int top_n) {
+    // Create an array of letters with their frequencies
+    char letter_freq[ALPHABET_SIZE];
+    for (int i = 0; i < ALPHABET_SIZE; i++) {
+        letter_freq[i] = 'A' + i;
+    }
+
+    // Sort the letters by their frequencies in descending order
+    for (int i = 0; i < ALPHABET_SIZE - 1; i++) {
+        for (int j = i + 1; j < ALPHABET_SIZE; j++) {
+            if (frequency[i] < frequency[j]) {
+                int temp_freq = frequency[i];
+                frequency[i] = frequency[j];
+                frequency[j] = temp_freq;
+
+                char temp_letter = letter_freq[i];
+                letter_freq[i] = letter_freq[j];
+                letter_freq[j] = temp_letter;
+            }
+        }
+    }
+
+    // Now letter_freq contains the letters sorted by frequency (most frequent first)
+    // Try substituting these letters with the expected English frequency order
+    for (int i = 0; i < top_n; i++) {
+        printf("Possible plaintext guess %d: ", i + 1);
+
+        // Create a substitution cipher based on the sorted frequencies
+        char substitution[ALPHABET_SIZE] = {0};
+        for (int j = 0; j < ALPHABET_SIZE; j++) {
+            substitution[letter_freq[j] - 'A'] = 'A' + j;
+        }
+
+        // Print the transformed ciphertext based on the substitution
+        for (int k = 0; ciphertext[k] != '\0'; k++) {
+            char c = toupper(ciphertext[k]);
+            if (c >= 'A' && c <= 'Z') {
+                printf("%c", substitution[c - 'A']);
+            } else {
+                printf("%c", ciphertext[k]);  // Non-alphabetic characters remain the same
+            }
+        }
+
+        printf("\n");
+    }
+}
+
+int main() {
+    char ciphertext[MAX_TEXT_LENGTH];
+    int frequency[ALPHABET_SIZE] = {0};
+
+    printf("Enter the ciphertext: ");
+    fgets(ciphertext, sizeof(ciphertext), stdin);
+    ciphertext[strcspn(ciphertext, "\n")] = '\0'; // Remove trailing newline if any
+
+    // Calculate letter frequency in the ciphertext
+    calculate_frequency(ciphertext, frequency);
+
+    // Print the top N possible plaintext guesses based on frequency analysis
+    printf("\nTop %d possible plaintext guesses based on letter frequency analysis:\n", TOP_N);
+    print_top_n_guesses(ciphertext, frequency, TOP_N);
+
+    return 0;
+}
